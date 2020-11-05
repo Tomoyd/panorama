@@ -58,11 +58,15 @@ function init() {
 
   document.body.addEventListener('mousedown', onPointerDown, false);
   document.body.addEventListener('touchstart', onTouchstart, false);
-  // document.addEventListener('wheel', onDocumentMouseWheel, false);
+  document.addEventListener('wheel', onDocumentMouseWheel, false);
   pointerX = window.innerWidth / 2;
   pointerY = window.innerHeight / 2;
 
   window.addEventListener('resize', onWindowResize, false);
+
+  lat = Math.max(-85, Math.min(85, lat));
+  phi = THREE.MathUtils.degToRad(90 - lat);
+  theta = THREE.MathUtils.degToRad(lon);
 }
 
 function onTouchstart(event) {
@@ -116,17 +120,21 @@ function updateTarget(axis) {
   lon -= (clientX - pointerX) * 0.1;
   lat += (clientY - pointerY) * 0.1;
 
-  pointerX = clientX;
-  pointerY = clientY;
   lat = Math.max(-85, Math.min(85, lat));
   phi = THREE.MathUtils.degToRad(90 - lat);
   theta = THREE.MathUtils.degToRad(lon);
 
-  target.x = Math.sin(phi) * Math.cos(theta);
-  target.y = Math.cos(phi);
-  target.z = Math.sin(phi) * Math.sin(theta);
+  pointerX = clientX;
+  pointerY = clientY;
 }
 
+function onDocumentMouseWheel(event) {
+  const fov = camera.fov + event.deltaY * 0.05;
+
+  camera.fov = THREE.MathUtils.clamp(fov, 10, 75);
+
+  camera.updateProjectionMatrix();
+}
 function getTexturesFromAtlasFile(atlasImgUrl, tilesNum) {
   const textures = [];
 
@@ -168,6 +176,9 @@ function animate() {
 }
 
 function render() {
+  target.x = Math.sin(phi) * Math.cos(theta);
+  target.y = Math.cos(phi);
+  target.z = Math.sin(phi) * Math.sin(theta);
   camera.lookAt(target);
   renderer.render(scene, camera);
 }
